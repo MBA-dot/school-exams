@@ -1,0 +1,194 @@
+
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>منصة الامتحانات | مفتش المدارس</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Tahoma,Arial,sans-serif;background:#f4f6fb;color:#202b43}
+header{background:#263b70;color:white;padding:22px;text-align:center}
+header h1{margin:0 0 8px;font-size:25px}
+header p{margin:0;color:#dce5ff}
+main{max-width:850px;margin:25px auto;padding:0 15px}
+.card{background:white;padding:24px;border-radius:16px;box-shadow:0 4px 18px #18284a12;margin-bottom:18px}
+h2{margin-top:0;color:#263b70}
+input,button{font:inherit;border-radius:9px;padding:12px}
+input{width:100%;border:1px solid #ccd3e0;margin:10px 0 15px}
+button{border:0;cursor:pointer;background:#263b70;color:white}
+button:disabled{opacity:.5;cursor:not-allowed}
+.primary{width:100%;background:#e9a52c;color:#202b43;font-weight:bold}
+.secondary{background:#e9eef9;color:#263b70}
+.hidden{display:none!important}
+.question{border-bottom:1px solid #eee;padding:15px 0}
+.question p{font-weight:bold;line-height:1.8}
+.option{display:block;margin:8px 0;padding:10px;background:#f5f7fb;border-radius:8px;cursor:pointer}
+.option input{width:auto;margin:0 8px}
+.notice{padding:13px;background:#fff3d5;border-radius:9px;margin:12px 0}
+.good{background:#e2f7e9;padding:12px;border-radius:9px}
+.bad{background:#ffe5e5;padding:12px;border-radius:9px}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin:12px 0}
+.row button{flex:1}
+small{color:#667085}
+table{width:100%;border-collapse:collapse}
+td,th{padding:10px;border-bottom:1px solid #ddd;text-align:right}
+</style>
+</head>
+<body>
+<header>
+<h1>🎓 منصة الامتحانات</h1>
+<p>اللغة العربية — الدرس السادس: مفتّش المدارس</p>
+</header>
+<main>
+<section id="login" class="card">
+<h2>دخول الطالب</h2>
+<p>اكتب اسمك كما طلب منك المعلم قبل بدء الامتحان.</p>
+<label for="studentName">اسم الطالب الكامل</label>
+<input id="studentName" maxlength="80" placeholder="اكتب اسمك هنا">
+<button class="primary" onclick="startExam()">دخول الامتحان</button>
+<div class="notice">تعليمات: أجب عن الأسئلة بنفسك. سيظهر تنبيه إذا غادرت صفحة الامتحان أو أخفيتها.</div>
+</section>
+
+<section id="exam" class="card hidden">
+<h2>امتحان مفتّش المدارس</h2>
+<p>الطالب: <strong id="displayName"></strong></p>
+<p>الأسئلة: <strong id="count"></strong></p>
+<div id="pauseNotice" class="bad hidden">
+<strong>تم إيقاف الامتحان مؤقتًا!</strong>
+<p>تم رصد مغادرة صفحة الامتحان. اطلب من المعلم السماح لك بالمتابعة.</p>
+</div>
+<div id="questions"></div>
+<button id="submitBtn" class="primary" onclick="submitExam()">تسليم الامتحان</button>
+</section>
+
+<section id="result" class="card hidden">
+<h2>نتيجة الامتحان</h2>
+<div id="resultText"></div>
+<button class="secondary" onclick="location.reload()">العودة</button>
+</section>
+
+<section id="teacher" class="card">
+<h2>👩‍🏫 لوحة المعلم التجريبية</h2>
+<p>تعرض هذه اللوحة المحاولات المحفوظة في هذا المتصفح فقط.</p>
+<div class="row">
+<button class="secondary" onclick="showTeacher()">تحديث النتائج</button>
+<button class="secondary" onclick="toggleTeacher()">إخفاء اللوحة</button>
+</div>
+<div id="teacherData"></div>
+<small>هذه لوحة تجريبية وليست محمية بحساب معلم. لا تستخدمها لحفظ بيانات طلاب حقيقية.</small>
+</section>
+</main>
+<script>
+const bank = [
+{q:"ما الفكرة العامة التي تدور حولها قصة مفتّش المدارس؟",o:["زيارة المدارس وملاحظة أحوالها","رحلة إلى البحر","مسابقة رياضية","شراء الكتب"],a:0},
+{q:"ما الذي يسعى مفتّش المدارس إلى معرفته من زيارته؟",o:["أحوال المدرسة واحتياجاتها","أسعار المتاجر","أخبار السفر","نتائج مباراة"],a:0},
+{q:"أيّ تصرف يدل على الاهتمام بتحسين المدرسة؟",o:["ملاحظة المشكلات ومحاولة معالجتها","تجاهل احتياجات الطلاب","ترك المكان دون تفقده","منع التعاون"],a:0},
+{q:"ما أهمية الحوار في القصة؟",o:["يساعد على كشف الأفكار والمشكلات","يوقف أحداث القصة","لا علاقة له بالشخصيات","يستبدل جميع الأحداث"],a:0},
+{q:"عند تحليل شخصية في القصة، ما الأفضل الاستناد إليه؟",o:["أقوالها وأفعالها ومواقفها","عنوان الكتاب فقط","عدد صفحات القصة","لون الورق"],a:0},
+{q:"أيّ مما يأتي يساعد على فهم أحداث القصة؟",o:["متابعة تسلسل الأحداث","قراءة كلمة واحدة فقط","تجاهل الشخصيات","النظر إلى الصور دون قراءة"],a:0},
+{q:"ما المقصود بتحليل الشخصية؟",o:["التعرف إلى صفاتها من مواقفها وأفعالها","نسخ عنوان القصة","عدّ فقرات النص","تغيير نهاية القصة"],a:0},
+{q:"أيّ سلوك يعكس التعاون في المدرسة؟",o:["مساعدة الآخرين على إنجاز العمل","إخفاء الأدوات عن الجميع","رفض كل مساعدة","إهمال المسؤوليات"],a:0},
+{q:"اسم المفعول من الفعل الثلاثي «كتب» هو:",o:["كاتب","مكتوب","كتاب","يكتب"],a:1},
+{q:"اختر اسم المفعول من الكلمات الآتية:",o:["مُعلِّم","مُجتهد","مفتوح","يَفتح"],a:2},
+{q:"اسم المفعول من الفعل الثلاثي «حفظ» هو:",o:["حافظ","حفيظ","محفوظ","حفظ"],a:2},
+{q:"في جملة «الدرس مكتوب»، ما اسم المفعول؟",o:["الدرس","مكتوب","في","الجملة"],a:1},
+{q:"ما اسم المفعول من الفعل «فهم»؟",o:["فاهم","مفهوم","فهم","يفهم"],a:1},
+{q:"أيّ كلمة هي اسم فاعل؟",o:["معلوم","مكتوب","كاتب","محفوظ"],a:2},
+{q:"أيّ كلمة هي اسم مفعول؟",o:["قارئ","سامع","مسموع","دارس"],a:2}
+];
+
+let student="", selected=[], attempts=0, paused=false, finished=false;
+let answers={};
+let records=JSON.parse(localStorage.getItem("schoolExamDemo")||"[]");
+
+function shuffle(arr){return [...arr].sort(()=>Math.random()-.5)}
+function startExam(){
+ student=document.getElementById("studentName").value.trim();
+ if(!student){alert("اكتب اسم الطالب أولًا.");return}
+ selected=shuffle(bank).slice(0,10);
+ answers={};attempts=0;paused=false;finished=false;
+ document.getElementById("login").classList.add("hidden");
+ document.getElementById("exam").classList.remove("hidden");
+ document.getElementById("displayName").textContent=student;
+ document.getElementById("count").textContent=selected.length;
+ renderQuestions();
+}
+function renderQuestions(){
+ const area=document.getElementById("questions");
+ area.innerHTML="";
+ selected.forEach((item,i)=>{
+  const div=document.createElement("div");
+  div.className="question";
+  const p=document.createElement("p");
+  p.textContent=(i+1)+". "+item.q;
+  div.appendChild(p);
+  item.o.forEach((option,j)=>{
+   const label=document.createElement("label");
+   label.className="option";
+   const radio=document.createElement("input");
+   radio.type="radio";radio.name="q"+i;radio.value=j;
+   radio.checked=answers[i]===j;
+   radio.disabled=paused;
+   radio.onchange=()=>answers[i]=j;
+   label.appendChild(radio);
+   label.appendChild(document.createTextNode(option));
+   div.appendChild(label);
+  });
+  area.appendChild(div);
+ });
+ document.getElementById("submitBtn").disabled=paused;
+}
+function pauseExam(){
+ if(finished||paused||document.getElementById("exam").classList.contains("hidden"))return;
+ paused=true;attempts++;
+ document.getElementById("pauseNotice").classList.remove("hidden");
+ renderQuestions();
+ saveRecord("متوقف");
+}
+document.addEventListener("visibilitychange",()=>{
+ if(document.hidden)pauseExam();
+});
+function submitExam(){
+ if(paused||finished)return;
+ if(!confirm("هل تريد تسليم إجاباتك؟"))return;
+ let score=0;
+ selected.forEach((q,i)=>{if(answers[i]===q.a)score++});
+ finished=true;
+ records.push({name:student,score,total:selected.length,status:"مكتمل",attempts,date:new Date().toLocaleString("ar")});
+ saveRecords();
+ document.getElementById("exam").classList.add("hidden");
+ document.getElementById("result").classList.remove("hidden");
+ document.getElementById("resultText").innerHTML=
+ `<p>الطالب: <strong>${escapeHTML(student)}</strong></p>
+ <p>النتيجة: <strong>${score} من ${selected.length}</strong></p>`;
+ showTeacher();
+}
+function saveRecord(status){
+ const i=records.findIndex(r=>r.name===student&&r.status==="متوقف");
+ if(i>=0){records[i].attempts=attempts;records[i].status=status}
+ else records.push({name:student,score:"—",total:selected.length,status,attempts,date:new Date().toLocaleString("ar")});
+ saveRecords();
+}
+function saveRecords(){localStorage.setItem("schoolExamDemo",JSON.stringify(records));showTeacher()}
+function showTeacher(){
+ const area=document.getElementById("teacherData");
+ if(!records.length){area.textContent="لا توجد محاولات محفوظة بعد.";return}
+ area.innerHTML="<table><thead><tr><th>الطالب</th><th>النتيجة</th><th>الحالة</th><th>المغادرات</th><th>الإجراء</th></tr></thead><tbody>"+
+ records.map((r,i)=>`<tr><td>${escapeHTML(r.name)}</td><td>${r.score}${r.total!=="—"?" / "+r.total:""}</td><td>${escapeHTML(r.status)}</td><td>${r.attempts||0}</td><td>${r.status==="متوقف"?`<button onclick="resumeExam(${i})">السماح بالمتابعة</button>`:"—"}</td></tr>`).join("")+
+ "</tbody></table>";
+}
+function resumeExam(i){
+ if(!confirm("هل تسمح للطالب بمتابعة المحاولة الحالية على هذا الجهاز؟"))return;
+ records[i].status="مسموح بالمتابعة";
+ saveRecords();
+ paused=false;
+ document.getElementById("pauseNotice").classList.add("hidden");
+ renderQuestions();
+}
+function toggleTeacher(){document.getElementById("teacher").classList.toggle("hidden")}
+function escapeHTML(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+showTeacher();
+</script>
+</body>
+</html>
